@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react'
 import './App.css'
 
-// Login Component
+// Login Component with role selection
 function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState('formateur')
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (username && password) {
-      onLogin()
+      onLogin(role)
     }
   }
 
@@ -35,6 +36,13 @@ function LoginPage({ onLogin }) {
         <div className="login-subtitle">Attendance Management</div>
         
         <form onSubmit={handleSubmit} className="login-form">
+          <div className="login-field">
+            <label>Type de compte</label>
+            <select value={role} onChange={(e) => setRole(e.target.value)} className="login-select">
+              <option value="formateur">Formateur</option>
+              <option value="admin">Administrateur</option>
+            </select>
+          </div>
           <div className="login-field">
             <label>Username</label>
             <input 
@@ -87,7 +95,7 @@ const GROUPES = [
   { id: 6, nom: 'CPT101', filiereId: 6 },
 ]
 
-const STAGIAIRES = [
+const initialStagiaires = [
   { id: 1, cef: 'CEF001', nom: 'ALAMI Mohammed', email: 'alami.m@ofppt.ma', groupeId: 1, noteDiscipline: 20 },
   { id: 2, cef: 'CEF002', nom: 'BENALI Fatima', email: 'benali.f@ofppt.ma', groupeId: 1, noteDiscipline: 18 },
   { id: 3, cef: 'CEF003', nom: 'CHAKIR Ahmed', email: 'chakir.a@ofppt.ma', groupeId: 1, noteDiscipline: 20 },
@@ -109,8 +117,10 @@ const initialAbsences = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userRole, setUserRole] = useState('')
   const [currentView, setCurrentView] = useState('marquer')
   const [absences, setAbsences] = useState(initialAbsences)
+  const [stagiaires, setStagiaires] = useState(initialStagiaires)
   
   // Filter states
   const [selectedSecteur, setSelectedSecteur] = useState('')
@@ -140,10 +150,16 @@ function App() {
 
   const filteredStagiaires = useMemo(() => {
     if (!selectedGroupe) return []
-    return STAGIAIRES.filter(s => s.groupeId === parseInt(selectedGroupe))
-  }, [selectedGroupe])
+    return stagiaires.filter(s => s.groupeId === parseInt(selectedGroupe))
+  }, [selectedGroupe, stagiaires])
 
   // Handlers
+  const handleLogin = (role) => {
+    setUserRole(role)
+    setIsLoggedIn(true)
+    setCurrentView(role === 'admin' ? 'consulter' : 'marquer')
+  }
+
   const handleSecteurChange = (e) => {
     setSelectedSecteur(e.target.value)
     setSelectedFiliere('')
@@ -178,20 +194,60 @@ function App() {
     )
   }
 
+  // Mark absence - affects discipline note for NJ absences (-0.5 per session)
   const handleMarquerAbsence = () => {
     if (selectedStagiaires.length === 0 || !selectedDate) return
     
+    const duree = parseInt(absenceDuree)
     const newAbsences = selectedStagiaires.map((stagiaireId, index) => ({
       id: absences.length + index + 1,
       stagiaireId,
       date: selectedDate,
-      duree: parseInt(absenceDuree),
+      duree,
       etat: absenceEtat
     }))
     
+    // Update discipline notes for NJ absences (-0.5 per session)
+    if (absenceEtat === 'NJ') {
+      setStagiaires(prev => prev.map(s => {
+        if (selectedStagiaires.includes(s.id)) {
+          const penalty = duree * 0.5
+          return { ...s, noteDiscipline: Math.max(0, s.noteDiscipline - penalty) }
+        }
+        return s
+      }))
+    }
+    
     setAbsences(prev => [...prev, ...newAbsences])
     setSelectedStagiaires([])
-    alert(`${newAbsences.length} absence(s) marquée(s) avec succès.`)
+    alert(`${newAbsences.length} absence(s) marquée(s) avec succès.${absenceEtat === 'NJ' ? ` Note discipline: -${duree * 0.5} points.` : ''}`)
+  }
+
+  // Toggle absence state (J <=> NJ) - Admin only
+  const handleToggleEtat = (absenceId) => {
+    const absence = absences.find(a => a.id === absenceId)
+    if (!absence) return
+    
+    const newEtat = absence.etat === 'J' ? 'NJ' : 'J'
+    const penalty = absence.duree * 0.5
+    
+    // Update stagiaire discipline note
+    setStagiaires(prev => prev.map(s => {
+      if (s.id === absence.stagiaireId) {
+        if (newEtat === 'NJ') {
+          // Changed from J to NJ: subtract points
+          return { ...s, noteDiscipline: Math.max(0, s.noteDiscipline - penalty) }
+        } else {
+          // Changed from NJ to J: restore points
+          return { ...s, noteDiscipline: Math.min(20, s.noteDiscipline + penalty) }
+        }
+      }
+      return s
+    }))
+    
+    setAbsences(prev => prev.map(a => 
+      a.id === absenceId ? { ...a, etat: newEtat } : a
+    ))
   }
 
   // Consult absences data
@@ -201,21 +257,51 @@ function App() {
       filtered = filtered.filter(a => a.date === consultDate)
     }
     if (consultGroupe) {
-      const groupeStagiaires = STAGIAIRES.filter(s => s.groupeId === parseInt(consultGroupe)).map(s => s.id)
+      const groupeStagiaires = stagiaires.filter(s => s.groupeId === parseInt(consultGroupe)).map(s => s.id)
       filtered = filtered.filter(a => groupeStagiaires.includes(a.stagiaireId))
     }
     return filtered.map(a => {
-      const stagiaire = STAGIAIRES.find(s => s.id === a.stagiaireId)
+      const stagiaire = stagiaires.find(s => s.id === a.stagiaireId)
       return { ...a, stagiaire }
     })
-  }, [absences, consultDate, consultGroupe])
+  }, [absences, consultDate, consultGroupe, stagiaires])
+
+  // Statistics calculations
+  const statistics = useMemo(() => {
+    const totalAbsences = absences.length
+    const totalNJ = absences.filter(a => a.etat === 'NJ').length
+    const totalJ = absences.filter(a => a.etat === 'J').length
+    const totalSeances = absences.reduce((sum, a) => sum + a.duree, 0)
+    
+    // Per group stats
+    const groupStats = GROUPES.map(g => {
+      const groupStagiaires = stagiaires.filter(s => s.groupeId === g.id).map(s => s.id)
+      const groupAbsences = absences.filter(a => groupStagiaires.includes(a.stagiaireId))
+      const njCount = groupAbsences.filter(a => a.etat === 'NJ').length
+      const jCount = groupAbsences.filter(a => a.etat === 'J').length
+      const seances = groupAbsences.reduce((sum, a) => sum + a.duree, 0)
+      return { ...g, total: groupAbsences.length, nj: njCount, j: jCount, seances }
+    }).filter(g => g.total > 0)
+    
+    // Top absent stagiaires
+    const stagiaireAbsences = stagiaires.map(s => {
+      const sAbsences = absences.filter(a => a.stagiaireId === s.id)
+      const njCount = sAbsences.filter(a => a.etat === 'NJ').length
+      const totalSeances = sAbsences.reduce((sum, a) => sum + a.duree, 0)
+      return { ...s, absenceCount: sAbsences.length, njCount, totalSeances }
+    }).filter(s => s.absenceCount > 0).sort((a, b) => b.totalSeances - a.totalSeances).slice(0, 5)
+    
+    return { totalAbsences, totalNJ, totalJ, totalSeances, groupStats, stagiaireAbsences }
+  }, [absences, stagiaires])
 
   const handleLogout = () => {
     setIsLoggedIn(false)
+    setUserRole('')
+    setCurrentView('marquer')
   }
 
   if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />
+    return <LoginPage onLogin={handleLogin} />
   }
 
   return (
@@ -224,20 +310,31 @@ function App() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <h2>OFPPT</h2>
+          <span className="role-badge">{userRole === 'admin' ? 'Admin' : 'Formateur'}</span>
         </div>
         <nav className="sidebar-nav">
-          <button 
-            className={`nav-item ${currentView === 'marquer' ? 'active' : ''}`}
-            onClick={() => setCurrentView('marquer')}
-          >
-            Marquer Absence
-          </button>
+          {userRole === 'formateur' && (
+            <button 
+              className={`nav-item ${currentView === 'marquer' ? 'active' : ''}`}
+              onClick={() => setCurrentView('marquer')}
+            >
+              Marquer Absence
+            </button>
+          )}
           <button 
             className={`nav-item ${currentView === 'consulter' ? 'active' : ''}`}
             onClick={() => setCurrentView('consulter')}
           >
             Consulter Absences
           </button>
+          {userRole === 'admin' && (
+            <button 
+              className={`nav-item ${currentView === 'statistiques' ? 'active' : ''}`}
+              onClick={() => setCurrentView('statistiques')}
+            >
+              Statistiques
+            </button>
+          )}
           <button className="nav-item nav-item-logout" onClick={handleLogout}>
             Déconnexion
           </button>
@@ -250,13 +347,13 @@ function App() {
         <header className="header">
           <h1 className="header-title">Gestion des Absences</h1>
           <div className="header-user">
-            Connecté en tant que: <span>Formateur</span>
+            Connecté en tant que: <span>{userRole === 'admin' ? 'Administrateur' : 'Formateur'}</span>
           </div>
         </header>
 
         {/* Main Content */}
         <main className="main-content">
-          {currentView === 'marquer' ? (
+          {currentView === 'marquer' && userRole === 'formateur' && (
             <>
               {/* Filter Section */}
               <section className="filter-section">
@@ -347,7 +444,7 @@ function App() {
                             <td>{s.cef}</td>
                             <td>{s.nom}</td>
                             <td>{s.email}</td>
-                            <td>{s.noteDiscipline}</td>
+                            <td className={s.noteDiscipline < 15 ? 'note-low' : ''}>{s.noteDiscipline.toFixed(1)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -386,9 +483,14 @@ function App() {
                     Marquer absence pour les stagiaires sélectionnés
                   </button>
                 </div>
+                <div className="action-note">
+                  Note: Une absence non justifiée entraîne -0.5 point de discipline par séance.
+                </div>
               </section>
             </>
-          ) : (
+          )}
+
+          {currentView === 'consulter' && (
             /* Consult Absences View */
             <div className="consult-section">
               <section className="consult-filter">
@@ -432,6 +534,8 @@ function App() {
                           <th>Nom</th>
                           <th>Durée absence</th>
                           <th>État</th>
+                          <th>Note discipline</th>
+                          {userRole === 'admin' && <th>Action</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -444,6 +548,19 @@ function App() {
                             <td className={a.etat === 'J' ? 'status-j' : 'status-nj'}>
                               {a.etat === 'J' ? 'Justifiée' : 'Non justifiée'}
                             </td>
+                            <td className={a.stagiaire?.noteDiscipline < 15 ? 'note-low' : ''}>
+                              {a.stagiaire?.noteDiscipline.toFixed(1)}
+                            </td>
+                            {userRole === 'admin' && (
+                              <td>
+                                <button 
+                                  className="btn-toggle"
+                                  onClick={() => handleToggleEtat(a.id)}
+                                >
+                                  {a.etat === 'J' ? 'Marquer NJ' : 'Marquer J'}
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -452,6 +569,103 @@ function App() {
                     <div className="empty-state">
                       Aucune absence trouvée pour les critères sélectionnés.
                     </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {currentView === 'statistiques' && userRole === 'admin' && (
+            /* Statistics View */
+            <div className="stats-section">
+              {/* Summary Cards */}
+              <div className="stats-cards">
+                <div className="stat-card">
+                  <div className="stat-value">{statistics.totalAbsences}</div>
+                  <div className="stat-label">Total Absences</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value stat-nj">{statistics.totalNJ}</div>
+                  <div className="stat-label">Non Justifiées</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value stat-j">{statistics.totalJ}</div>
+                  <div className="stat-label">Justifiées</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{statistics.totalSeances}</div>
+                  <div className="stat-label">Total Séances</div>
+                </div>
+              </div>
+
+              {/* Group Stats */}
+              <section className="stats-table-section">
+                <div className="table-section-header">
+                  <span className="table-section-title">Absences par Groupe</span>
+                </div>
+                <div className="table-container">
+                  {statistics.groupStats.length > 0 ? (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Groupe</th>
+                          <th>Total Absences</th>
+                          <th>Non Justifiées</th>
+                          <th>Justifiées</th>
+                          <th>Total Séances</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {statistics.groupStats.map(g => (
+                          <tr key={g.id}>
+                            <td>{g.nom}</td>
+                            <td>{g.total}</td>
+                            <td className="status-nj">{g.nj}</td>
+                            <td className="status-j">{g.j}</td>
+                            <td>{g.seances}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="empty-state">Aucune donnée disponible.</div>
+                  )}
+                </div>
+              </section>
+
+              {/* Top Absent Stagiaires */}
+              <section className="stats-table-section">
+                <div className="table-section-header">
+                  <span className="table-section-title">Top 5 Stagiaires les plus absents</span>
+                </div>
+                <div className="table-container">
+                  {statistics.stagiaireAbsences.length > 0 ? (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>CEF</th>
+                          <th>Nom</th>
+                          <th>Absences</th>
+                          <th>Non Justifiées</th>
+                          <th>Séances manquées</th>
+                          <th>Note Discipline</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {statistics.stagiaireAbsences.map(s => (
+                          <tr key={s.id}>
+                            <td>{s.cef}</td>
+                            <td>{s.nom}</td>
+                            <td>{s.absenceCount}</td>
+                            <td className="status-nj">{s.njCount}</td>
+                            <td>{s.totalSeances}</td>
+                            <td className={s.noteDiscipline < 15 ? 'note-low' : ''}>{s.noteDiscipline.toFixed(1)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="empty-state">Aucune donnée disponible.</div>
                   )}
                 </div>
               </section>
