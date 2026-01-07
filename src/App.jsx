@@ -1,116 +1,43 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useAuth } from './contexts/AuthContext'
+import { useAppState } from './hooks/useAppState'
+import { useToast } from './components/Toast'
+import ErrorBoundary from './components/ErrorBoundary'
+import LoadingSpinner from './components/LoadingSpinner'
+import RoleSelector from './components/RoleSelector'
+import AuthenticationForm from './components/AuthenticationForm'
+import AdminDashboard from './components/AdminDashboard'
+import TeacherDashboard from './components/TeacherDashboard'
+import ProtectedRoute from './components/ProtectedRoute'
+import StudentManager from './components/StudentManager'
+import ExcelImporter from './components/ExcelImporter'
+import RollbackManager from './components/RollbackManager'
+import AbsenceAnalytics from './components/AbsenceAnalytics'
+import EnhancedAbsenceConsultation from './components/EnhancedAbsenceConsultation'
+import { PERMISSIONS } from './utils/permissions'
 import './App.css'
 
-// Login Component
-function LoginPage({ onLogin }) {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (username && password) {
-      onLogin()
-    }
-  }
-
-  return (
-    <div className="login-container">
-      <div className="login-grid-bg"></div>
-      <div className="login-box">
-        <div className="login-logo">
-          <svg className="logo-icon" viewBox="0 0 100 100" width="50" height="50">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#1a1a1a" strokeWidth="6"/>
-            <circle cx="50" cy="50" r="8" fill="#1a1a1a"/>
-            <line x1="50" y1="5" x2="50" y2="25" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="50" y1="75" x2="50" y2="95" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="5" y1="50" x2="25" y2="50" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="75" y1="50" x2="95" y2="50" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="18" y1="18" x2="32" y2="32" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="68" y1="68" x2="82" y2="82" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="82" y1="18" x2="68" y2="32" stroke="#1a1a1a" strokeWidth="6"/>
-            <line x1="32" y1="68" x2="18" y2="82" stroke="#1a1a1a" strokeWidth="6"/>
-          </svg>
-          <span className="logo-text">FPPT</span>
-        </div>
-        <div className="login-subtitle">Attendance Management</div>
-        
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="login-field">
-            <label>Username</label>
-            <input 
-              type="text" 
-              placeholder="Enter username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div className="login-field">
-            <label>Password</label>
-            <input 
-              type="password" 
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="login-btn">Login</button>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// Mock Data
-const SECTEURS = [
-  { id: 1, nom: 'IA & Digital' },
-  { id: 2, nom: 'Industriel' },
-  { id: 3, nom: 'AGC' },
-  { id: 4, nom: 'BTP' },
-]
-
-const FILIERES = [
-  { id: 1, nom: 'Développement Digital', secteurId: 1 },
-  { id: 2, nom: 'Infrastructure Digitale', secteurId: 1 },
-  { id: 3, nom: 'Électromécanique', secteurId: 2 },
-  { id: 4, nom: 'Fabrication Mécanique', secteurId: 2 },
-  { id: 5, nom: 'Gestion des Entreprises', secteurId: 3 },
-  { id: 6, nom: 'Comptabilité', secteurId: 3 },
-  { id: 7, nom: 'Génie Civil', secteurId: 4 },
-]
-
-const GROUPES = [
-  { id: 1, nom: 'DEV101', filiereId: 1 },
-  { id: 2, nom: 'DEV102', filiereId: 1 },
-  { id: 3, nom: 'INF101', filiereId: 2 },
-  { id: 4, nom: 'ELM101', filiereId: 3 },
-  { id: 5, nom: 'GE101', filiereId: 5 },
-  { id: 6, nom: 'CPT101', filiereId: 6 },
-]
-
-const STAGIAIRES = [
-  { id: 1, cef: 'CEF001', nom: 'ALAMI Mohammed', email: 'alami.m@ofppt.ma', groupeId: 1, noteDiscipline: 20 },
-  { id: 2, cef: 'CEF002', nom: 'BENALI Fatima', email: 'benali.f@ofppt.ma', groupeId: 1, noteDiscipline: 18 },
-  { id: 3, cef: 'CEF003', nom: 'CHAKIR Ahmed', email: 'chakir.a@ofppt.ma', groupeId: 1, noteDiscipline: 20 },
-  { id: 4, cef: 'CEF004', nom: 'DAHBI Sara', email: 'dahbi.s@ofppt.ma', groupeId: 1, noteDiscipline: 16 },
-  { id: 5, cef: 'CEF005', nom: 'EL FASSI Youssef', email: 'elfassi.y@ofppt.ma', groupeId: 1, noteDiscipline: 20 },
-  { id: 6, cef: 'CEF006', nom: 'FILALI Khadija', email: 'filali.k@ofppt.ma', groupeId: 2, noteDiscipline: 19 },
-  { id: 7, cef: 'CEF007', nom: 'GHALI Omar', email: 'ghali.o@ofppt.ma', groupeId: 2, noteDiscipline: 20 },
-  { id: 8, cef: 'CEF008', nom: 'HAMIDI Laila', email: 'hamidi.l@ofppt.ma', groupeId: 3, noteDiscipline: 17 },
-  { id: 9, cef: 'CEF009', nom: 'IDRISSI Rachid', email: 'idrissi.r@ofppt.ma', groupeId: 4, noteDiscipline: 20 },
-  { id: 10, cef: 'CEF010', nom: 'JABRI Amina', email: 'jabri.a@ofppt.ma', groupeId: 5, noteDiscipline: 20 },
-]
-
-const initialAbsences = [
-  { id: 1, stagiaireId: 1, date: '2025-01-15', duree: 1, etat: 'NJ' },
-  { id: 2, stagiaireId: 2, date: '2025-01-15', duree: 2, etat: 'J' },
-  { id: 3, stagiaireId: 3, date: '2025-01-16', duree: 1, etat: 'NJ' },
-  { id: 4, stagiaireId: 1, date: '2025-01-20', duree: 2, etat: 'J' },
-]
-
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentView, setCurrentView] = useState('marquer')
-  const [absences, setAbsences] = useState(initialAbsences)
+  const { isAuthenticated, userRole, username, logout } = useAuth()
+  const { 
+    secteurs, 
+    filieres, 
+    absences, 
+    stagiaires, 
+    groupes,
+    isLoading,
+    loadingMessage,
+    setLoading,
+    addAbsences,
+    removeAbsence,
+    logAction
+  } = useAppState()
+  const { showSuccess, showError, showWarning } = useToast()
+  
+  const [showRoleSelector, setShowRoleSelector] = useState(true)
+  const [selectedRole, setSelectedRole] = useState(null)
+  const [currentView, setCurrentView] = useState('dashboard')
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
   
   // Filter states
   const [selectedSecteur, setSelectedSecteur] = useState('')
@@ -120,346 +47,736 @@ function App() {
   
   // Selection states
   const [selectedStagiaires, setSelectedStagiaires] = useState([])
+  const [stagiairesDurations, setStagiairesDurations] = useState({}) // Individual durations for each student
   const [absenceDuree, setAbsenceDuree] = useState('1')
   const [absenceEtat, setAbsenceEtat] = useState('NJ')
-  
-  // Consult view states
-  const [consultDate, setConsultDate] = useState('')
-  const [consultGroupe, setConsultGroupe] = useState('')
 
-  // Filtered data
+  // Network status monitoring
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      showSuccess('Connexion rétablie')
+    }
+    
+    const handleOffline = () => {
+      setIsOnline(false)
+      showWarning('Connexion perdue - Mode hors ligne')
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [showSuccess, showWarning])
+
+  // Error handling for unhandled promise rejections
+  useEffect(() => {
+    const handleUnhandledRejection = (event) => {
+      console.error('Unhandled promise rejection:', event.reason)
+      showError('Une erreur inattendue s\'est produite')
+    }
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+  }, [showError])
+
+  // Filtered data with error handling
   const filteredFilieres = useMemo(() => {
-    if (!selectedSecteur) return []
-    return FILIERES.filter(f => f.secteurId === parseInt(selectedSecteur))
-  }, [selectedSecteur])
+    try {
+      if (!selectedSecteur) return []
+      return filieres.filter(f => f.secteurId === parseInt(selectedSecteur))
+    } catch (error) {
+      console.error('Error filtering filieres:', error)
+      showError('Erreur lors du filtrage des filières')
+      return []
+    }
+  }, [selectedSecteur, filieres, showError])
 
   const filteredGroupes = useMemo(() => {
-    if (!selectedFiliere) return []
-    return GROUPES.filter(g => g.filiereId === parseInt(selectedFiliere))
-  }, [selectedFiliere])
+    try {
+      if (!selectedFiliere) return []
+      return groupes.filter(g => g.filiereId === parseInt(selectedFiliere))
+    } catch (error) {
+      console.error('Error filtering groupes:', error)
+      showError('Erreur lors du filtrage des groupes')
+      return []
+    }
+  }, [selectedFiliere, groupes, showError])
 
   const filteredStagiaires = useMemo(() => {
-    if (!selectedGroupe) return []
-    return STAGIAIRES.filter(s => s.groupeId === parseInt(selectedGroupe))
-  }, [selectedGroupe])
+    try {
+      if (!selectedGroupe) return []
+      return stagiaires.filter(s => s.groupeId === parseInt(selectedGroupe))
+    } catch (error) {
+      console.error('Error filtering stagiaires:', error)
+      showError('Erreur lors du filtrage des stagiaires')
+      return []
+    }
+  }, [selectedGroupe, stagiaires, showError])
 
-  // Handlers
-  const handleSecteurChange = (e) => {
-    setSelectedSecteur(e.target.value)
-    setSelectedFiliere('')
-    setSelectedGroupe('')
-    setSelectedStagiaires([])
+  // Handlers with enhanced error handling and loading states
+  const handleSecteurChange = async (e) => {
+    try {
+      setLoading(true, 'Chargement des filières...')
+      setSelectedSecteur(e.target.value)
+      setSelectedFiliere('')
+      setSelectedGroupe('')
+      setSelectedStagiaires([])
+      setStagiairesDurations({}) // Clear durations when changing selection
+      
+      // Simulate async operation for better UX
+      await new Promise(resolve => setTimeout(resolve, 100))
+    } catch (error) {
+      console.error('Error changing secteur:', error)
+      showError('Erreur lors du changement de secteur')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleFiliereChange = (e) => {
-    setSelectedFiliere(e.target.value)
-    setSelectedGroupe('')
-    setSelectedStagiaires([])
+  const handleFiliereChange = async (e) => {
+    try {
+      setLoading(true, 'Chargement des groupes...')
+      setSelectedFiliere(e.target.value)
+      setSelectedGroupe('')
+      setSelectedStagiaires([])
+      setStagiairesDurations({}) // Clear durations when changing selection
+      
+      // Simulate async operation for better UX
+      await new Promise(resolve => setTimeout(resolve, 100))
+    } catch (error) {
+      console.error('Error changing filiere:', error)
+      showError('Erreur lors du changement de filière')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleGroupeChange = (e) => {
-    setSelectedGroupe(e.target.value)
-    setSelectedStagiaires([])
+  const handleGroupeChange = async (e) => {
+    try {
+      setLoading(true, 'Chargement des stagiaires...')
+      setSelectedGroupe(e.target.value)
+      setSelectedStagiaires([])
+      setStagiairesDurations({}) // Clear durations when changing selection
+      
+      // Simulate async operation for better UX
+      await new Promise(resolve => setTimeout(resolve, 100))
+    } catch (error) {
+      console.error('Error changing groupe:', error)
+      showError('Erreur lors du changement de groupe')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedStagiaires(filteredStagiaires.map(s => s.id))
+      const allIds = filteredStagiaires.map(s => s.id)
+      setSelectedStagiaires(allIds)
+      
+      // Initialize durations for all selected students
+      const initialDurations = {}
+      allIds.forEach(id => {
+        initialDurations[id] = absenceDuree
+      })
+      setStagiairesDurations(initialDurations)
     } else {
       setSelectedStagiaires([])
+      setStagiairesDurations({}) // Clear all durations
     }
   }
 
   const handleSelectStagiaire = (id) => {
-    setSelectedStagiaires(prev => 
-      prev.includes(id) 
+    setSelectedStagiaires(prev => {
+      const newSelected = prev.includes(id) 
         ? prev.filter(s => s !== id)
         : [...prev, id]
+      
+      // Initialize duration for newly selected students
+      if (!prev.includes(id) && newSelected.includes(id)) {
+        setStagiairesDurations(prevDurations => ({
+          ...prevDurations,
+          [id]: absenceDuree // Use current default duration
+        }))
+      }
+      
+      // Clean up duration for deselected students
+      if (prev.includes(id) && !newSelected.includes(id)) {
+        setStagiairesDurations(prevDurations => {
+          const { [id]: _removed, ...rest } = prevDurations
+          return rest
+        })
+      }
+      
+      return newSelected
+    })
+  }
+
+  const handleStagiaireDurationChange = (stagiaireId, duration) => {
+    setStagiairesDurations(prev => ({
+      ...prev,
+      [stagiaireId]: duration
+    }))
+  }
+
+  const handleCustomDurationChange = (stagiaireId, customDuration) => {
+    // Validate custom duration (0.5 to 8 hours)
+    const duration = parseFloat(customDuration)
+    if (isNaN(duration) || duration < 0.5 || duration > 8) {
+      return false // Invalid duration
+    }
+    
+    setStagiairesDurations(prev => ({
+      ...prev,
+      [stagiaireId]: customDuration
+    }))
+    return true
+  }
+
+  const handleMarquerAbsence = async () => {
+    if (selectedStagiaires.length === 0 || !selectedDate) {
+      showWarning('Veuillez sélectionner au moins un stagiaire et une date')
+      return
+    }
+    
+    try {
+      setLoading(true, 'Enregistrement des absences...')
+      
+      // Validate all custom durations before proceeding
+      const invalidDurations = selectedStagiaires.filter(stagiaireId => {
+        const duration = stagiairesDurations[stagiaireId] || absenceDuree
+        if (duration === 'custom') return false // Custom should have been replaced with actual value
+        const numDuration = parseFloat(duration)
+        return isNaN(numDuration) || numDuration < 0.5 || numDuration > 8
+      })
+      
+      if (invalidDurations.length > 0) {
+        showError('Certaines durées sont invalides. Veuillez vérifier les durées personnalisées (0.5 à 8 heures).')
+        return
+      }
+      
+      const newAbsences = selectedStagiaires.map((stagiaireId, index) => {
+        const individualDuration = stagiairesDurations[stagiaireId] || absenceDuree
+        let finalDuration
+        
+        // Convert duration to hours for storage
+        if (individualDuration === '1') {
+          finalDuration = 2.5 // 1 session = 2.5 hours
+        } else if (individualDuration === '2') {
+          finalDuration = 5 // 2 sessions = 5 hours
+        } else {
+          finalDuration = parseFloat(individualDuration) // Custom duration in hours
+        }
+        
+        return {
+          id: Date.now() + index + Math.random(),
+          stagiaireId,
+          date: selectedDate,
+          duree: finalDuration, // Store as hours
+          dureSessions: individualDuration === '1' ? 1 : individualDuration === '2' ? 2 : 'custom', // Keep session info for display
+          etat: absenceEtat,
+          recordedBy: username || 'current_user', // Track who recorded the absence
+          recordedAt: new Date().toISOString() // Track when it was recorded
+        }
+      })
+      
+      // Simulate network delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      addAbsences(newAbsences, username)
+      setSelectedStagiaires([])
+      setStagiairesDurations({}) // Clear individual durations
+      
+      showSuccess(`${newAbsences.length} absence(s) marquée(s) avec succès.`)
+    } catch (error) {
+      console.error('Error marking absences:', error)
+      showError('Erreur lors de l\'enregistrement des absences')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRollback = async (absenceId) => {
+    try {
+      setLoading(true, 'Annulation de l\'absence...')
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      removeAbsence(absenceId, username)
+      showSuccess('Absence annulée avec succès.')
+    } catch (error) {
+      console.error('Error rolling back absence:', error)
+      showError('Erreur lors de l\'annulation de l\'absence')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      setLoading(true, 'Déconnexion...')
+      
+      // Log the logout action
+      logAction('LOGOUT', { timestamp: new Date().toISOString() }, username)
+      
+      // Simulate logout delay
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      logout()
+      setShowRoleSelector(true)
+      setSelectedRole(null)
+      setCurrentView('dashboard')
+      
+      showSuccess('Déconnexion réussie')
+    } catch (error) {
+      console.error('Error during logout:', error)
+      showError('Erreur lors de la déconnexion')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRoleSelected = (role) => {
+    try {
+      setSelectedRole(role)
+      setShowRoleSelector(false)
+      logAction('ROLE_SELECTED', { role }, 'anonymous')
+    } catch (error) {
+      console.error('Error selecting role:', error)
+      showError('Erreur lors de la sélection du rôle')
+    }
+  }
+
+  const handleBackToRoleSelection = () => {
+    try {
+      setShowRoleSelector(true)
+      setSelectedRole(null)
+    } catch (error) {
+      console.error('Error going back to role selection:', error)
+      showError('Erreur lors du retour à la sélection de rôle')
+    }
+  }
+
+  // Show role selector if not authenticated and showRoleSelector is true
+  if (!isAuthenticated && showRoleSelector) {
+    return (
+      <ErrorBoundary>
+        <RoleSelector onRoleSelected={handleRoleSelected} />
+      </ErrorBoundary>
     )
   }
 
-  const handleMarquerAbsence = () => {
-    if (selectedStagiaires.length === 0 || !selectedDate) return
-    
-    const newAbsences = selectedStagiaires.map((stagiaireId, index) => ({
-      id: absences.length + index + 1,
-      stagiaireId,
-      date: selectedDate,
-      duree: parseInt(absenceDuree),
-      etat: absenceEtat
-    }))
-    
-    setAbsences(prev => [...prev, ...newAbsences])
-    setSelectedStagiaires([])
-    alert(`${newAbsences.length} absence(s) marquée(s) avec succès.`)
-  }
-
-  // Consult absences data
-  const consultAbsences = useMemo(() => {
-    let filtered = absences
-    if (consultDate) {
-      filtered = filtered.filter(a => a.date === consultDate)
-    }
-    if (consultGroupe) {
-      const groupeStagiaires = STAGIAIRES.filter(s => s.groupeId === parseInt(consultGroupe)).map(s => s.id)
-      filtered = filtered.filter(a => groupeStagiaires.includes(a.stagiaireId))
-    }
-    return filtered.map(a => {
-      const stagiaire = STAGIAIRES.find(s => s.id === a.stagiaireId)
-      return { ...a, stagiaire }
-    })
-  }, [absences, consultDate, consultGroupe])
-
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-  }
-
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />
+  // Show authentication form if role is selected but not authenticated
+  if (!isAuthenticated && selectedRole) {
+    return (
+      <ErrorBoundary>
+        <AuthenticationForm 
+          selectedRole={selectedRole} 
+          onBack={handleBackToRoleSelection}
+        />
+      </ErrorBoundary>
+    )
   }
 
   return (
-    <div className="app-container">
-      {/* Left Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>OFPPT</h2>
-        </div>
-        <nav className="sidebar-nav">
-          <button 
-            className={`nav-item ${currentView === 'marquer' ? 'active' : ''}`}
-            onClick={() => setCurrentView('marquer')}
-          >
-            Marquer Absence
-          </button>
-          <button 
-            className={`nav-item ${currentView === 'consulter' ? 'active' : ''}`}
-            onClick={() => setCurrentView('consulter')}
-          >
-            Consulter Absences
-          </button>
-          <button className="nav-item nav-item-logout" onClick={handleLogout}>
-            Déconnexion
-          </button>
-        </nav>
-      </aside>
+    <ErrorBoundary>
+      <div className="app-container">
+        {/* Loading overlay */}
+        {isLoading && (
+          <LoadingSpinner 
+            overlay={true} 
+            message={loadingMessage} 
+            size="large"
+          />
+        )}
 
-      {/* Main Area */}
-      <div className="main-area">
-        {/* Header */}
-        <header className="header">
-          <h1 className="header-title">Gestion des Absences</h1>
-          <div className="header-user">
-            Connecté en tant que: <span>Formateur</span>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="main-content">
-          {currentView === 'marquer' ? (
-            <>
-              {/* Filter Section */}
-              <section className="filter-section">
-                <div className="filter-section-title">Filtres de sélection</div>
-                <div className="filter-row">
-                  <div className="filter-group">
-                    <label>Secteur</label>
-                    <select value={selectedSecteur} onChange={handleSecteurChange}>
-                      <option value="">-- Sélectionner --</option>
-                      {SECTEURS.map(s => (
-                        <option key={s.id} value={s.id}>{s.nom}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="filter-group">
-                    <label>Filière</label>
-                    <select 
-                      value={selectedFiliere} 
-                      onChange={handleFiliereChange}
-                      disabled={!selectedSecteur}
-                    >
-                      <option value="">-- Sélectionner --</option>
-                      {filteredFilieres.map(f => (
-                        <option key={f.id} value={f.id}>{f.nom}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="filter-group">
-                    <label>Groupe</label>
-                    <select 
-                      value={selectedGroupe} 
-                      onChange={handleGroupeChange}
-                      disabled={!selectedFiliere}
-                    >
-                      <option value="">-- Sélectionner --</option>
-                      {filteredGroupes.map(g => (
-                        <option key={g.id} value={g.id}>{g.nom}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="filter-group">
-                    <label>Date absence</label>
-                    <input 
-                      type="date" 
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* Stagiaires Table */}
-              <section className="table-section">
-                <div className="table-section-header">
-                  <span className="table-section-title">Liste des Stagiaires</span>
-                  <span className="table-section-count">
-                    {selectedStagiaires.length} sélectionné(s) sur {filteredStagiaires.length}
-                  </span>
-                </div>
-                <div className="table-container">
-                  {filteredStagiaires.length > 0 ? (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th className="th-checkbox">
-                            <input 
-                              type="checkbox"
-                              checked={selectedStagiaires.length === filteredStagiaires.length && filteredStagiaires.length > 0}
-                              onChange={handleSelectAll}
-                            />
-                          </th>
-                          <th className="th-cef">CEF</th>
-                          <th>Nom du stagiaire</th>
-                          <th>Email</th>
-                          <th className="th-note">Note discipline</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredStagiaires.map(s => (
-                          <tr key={s.id}>
-                            <td>
-                              <input 
-                                type="checkbox"
-                                checked={selectedStagiaires.includes(s.id)}
-                                onChange={() => handleSelectStagiaire(s.id)}
-                              />
-                            </td>
-                            <td>{s.cef}</td>
-                            <td>{s.nom}</td>
-                            <td>{s.email}</td>
-                            <td>{s.noteDiscipline}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="empty-state">
-                      Sélectionnez un secteur, une filière et un groupe pour afficher les stagiaires.
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Action Section */}
-              <section className="action-section">
-                <div className="action-section-title">Marquer l'absence</div>
-                <div className="action-row">
-                  <div className="action-group">
-                    <label>Durée</label>
-                    <select value={absenceDuree} onChange={(e) => setAbsenceDuree(e.target.value)}>
-                      <option value="1">1 séance (2h30)</option>
-                      <option value="2">2 séances (5h00)</option>
-                    </select>
-                  </div>
-                  <div className="action-group">
-                    <label>État</label>
-                    <select value={absenceEtat} onChange={(e) => setAbsenceEtat(e.target.value)}>
-                      <option value="J">Justifiée</option>
-                      <option value="NJ">Non justifiée</option>
-                    </select>
-                  </div>
-                  <button 
-                    className="btn-primary"
-                    onClick={handleMarquerAbsence}
-                    disabled={selectedStagiaires.length === 0}
-                  >
-                    Marquer absence pour les stagiaires sélectionnés
-                  </button>
-                </div>
-              </section>
-            </>
-          ) : (
-            /* Consult Absences View */
-            <div className="consult-section">
-              <section className="consult-filter">
-                <div className="filter-section-title">Rechercher les absences</div>
-                <div className="filter-row">
-                  <div className="filter-group">
-                    <label>Date</label>
-                    <input 
-                      type="date" 
-                      value={consultDate}
-                      onChange={(e) => setConsultDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="filter-group">
-                    <label>Groupe</label>
-                    <select 
-                      value={consultGroupe} 
-                      onChange={(e) => setConsultGroupe(e.target.value)}
-                    >
-                      <option value="">-- Tous les groupes --</option>
-                      {GROUPES.map(g => (
-                        <option key={g.id} value={g.id}>{g.nom}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </section>
-
-              <section className="consult-results">
-                <div className="table-section-header">
-                  <span className="table-section-title">Résultats</span>
-                  <span className="table-section-count">{consultAbsences.length} absence(s)</span>
-                </div>
-                <div className="table-container">
-                  {consultAbsences.length > 0 ? (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th className="th-cef">CEF</th>
-                          <th>Nom</th>
-                          <th>Durée absence</th>
-                          <th>État</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {consultAbsences.map(a => (
-                          <tr key={a.id}>
-                            <td>{a.date}</td>
-                            <td>{a.stagiaire?.cef}</td>
-                            <td>{a.stagiaire?.nom}</td>
-                            <td>{a.duree === 1 ? '2h30 (1 séance)' : '5h00 (2 séances)'}</td>
-                            <td className={a.etat === 'J' ? 'status-j' : 'status-nj'}>
-                              {a.etat === 'J' ? 'Justifiée' : 'Non justifiée'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="empty-state">
-                      Aucune absence trouvée pour les critères sélectionnés.
-                    </div>
-                  )}
-                </div>
-              </section>
+        {/* Connection status indicator */}
+        {!isOnline && (
+          <div className="connection-status">
+            <div className="connection-offline">
+              Mode hors ligne - Certaines fonctionnalités peuvent être limitées
             </div>
-          )}
-        </main>
+          </div>
+        )}
+
+        {/* Left Sidebar */}
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2>OFPPT</h2>
+          </div>
+          <nav className="sidebar-nav">
+            <button 
+              className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setCurrentView('dashboard')}
+              disabled={isLoading}
+            >
+              Tableau de bord
+            </button>
+            
+            <ProtectedRoute 
+              requiredPermission={PERMISSIONS.MARK_ABSENCES}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'marquer' ? 'active' : ''}`}
+                onClick={() => setCurrentView('marquer')}
+                disabled={isLoading}
+              >
+                Marquer Absence
+              </button>
+            </ProtectedRoute>
+            
+            <ProtectedRoute 
+              requiredPermissions={[PERMISSIONS.VIEW_ALL_GROUPS, PERMISSIONS.VIEW_ASSIGNED_GROUPS]}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'consulter' ? 'active' : ''}`}
+                onClick={() => setCurrentView('consulter')}
+                disabled={isLoading}
+              >
+                Consulter Absences
+              </button>
+            </ProtectedRoute>
+
+            <ProtectedRoute 
+              requiredPermission={PERMISSIONS.STUDENT_MANAGEMENT}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'gestion-stagiaires' ? 'active' : ''}`}
+                onClick={() => setCurrentView('gestion-stagiaires')}
+                disabled={isLoading}
+              >
+                Gestion Stagiaires
+              </button>
+            </ProtectedRoute>
+
+            <ProtectedRoute 
+              requiredPermission={PERMISSIONS.EXCEL_IMPORT}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'import-excel' ? 'active' : ''}`}
+                onClick={() => setCurrentView('import-excel')}
+                disabled={isLoading}
+              >
+                Import Excel
+              </button>
+            </ProtectedRoute>
+
+            <ProtectedRoute 
+              requiredPermission={PERMISSIONS.ROLLBACK_ABSENCES}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'rollback' ? 'active' : ''}`}
+                onClick={() => setCurrentView('rollback')}
+                disabled={isLoading}
+              >
+                Annuler Absences
+              </button>
+            </ProtectedRoute>
+
+            <ProtectedRoute 
+              requiredPermissions={[PERMISSIONS.VIEW_ALL_GROUPS, PERMISSIONS.VIEW_ASSIGNED_GROUPS]}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'analytics' ? 'active' : ''}`}
+                onClick={() => setCurrentView('analytics')}
+                disabled={isLoading}
+              >
+                Analyse Absences
+              </button>
+            </ProtectedRoute>
+
+            <ProtectedRoute 
+              requiredPermission={PERMISSIONS.SYSTEM_REPORTS}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'rapports' ? 'active' : ''}`}
+                onClick={() => setCurrentView('rapports')}
+                disabled={isLoading}
+              >
+                Rapports
+              </button>
+            </ProtectedRoute>
+
+            <button 
+              className="nav-item nav-item-logout" 
+              onClick={handleLogout}
+              disabled={isLoading}
+            >
+              Déconnexion
+            </button>
+          </nav>
+        </aside>
+
+        {/* Main Area */}
+        <div className="main-area">
+          {/* Header */}
+          <header className="header">
+            <h1 className="header-title">Gestion des Absences</h1>
+            <div className="header-user">
+              <div className="user-info">
+                Connecté en tant que: <span>{userRole} ({username})</span>
+              </div>
+              {!isOnline && (
+                <div className="status-indicator status-warning">
+                  Hors ligne
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="main-content">
+            <ErrorBoundary>
+              {currentView === 'dashboard' ? (
+                userRole === 'Administrateur' ? (
+                  <AdminDashboard currentView={currentView} setCurrentView={setCurrentView} />
+                ) : (
+                  <TeacherDashboard currentView={currentView} setCurrentView={setCurrentView} />
+                )
+              ) : currentView === 'marquer' ? (
+                <ProtectedRoute requiredPermission={PERMISSIONS.MARK_ABSENCES}>
+                  <>
+                    {/* Filter Section */}
+                    <section className="filter-section">
+                      <div className="filter-section-title">Filtres de sélection</div>
+                      <div className="filter-row">
+                        <div className={`filter-group ${isLoading ? 'form-group-loading' : ''}`}>
+                          <label>Secteur</label>
+                          <select 
+                            value={selectedSecteur} 
+                            onChange={handleSecteurChange}
+                            disabled={isLoading}
+                          >
+                            <option value="">-- Sélectionner --</option>
+                            {secteurs.map(s => (
+                              <option key={s.id} value={s.id}>{s.nom}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className={`filter-group ${isLoading ? 'form-group-loading' : ''}`}>
+                          <label>Filière</label>
+                          <select 
+                            value={selectedFiliere} 
+                            onChange={handleFiliereChange}
+                            disabled={!selectedSecteur || isLoading}
+                          >
+                            <option value="">-- Sélectionner --</option>
+                            {filteredFilieres.map(f => (
+                              <option key={f.id} value={f.id}>{f.nom}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className={`filter-group ${isLoading ? 'form-group-loading' : ''}`}>
+                          <label>Groupe</label>
+                          <select 
+                            value={selectedGroupe} 
+                            onChange={handleGroupeChange}
+                            disabled={!selectedFiliere || isLoading}
+                          >
+                            <option value="">-- Sélectionner --</option>
+                            {filteredGroupes.map(g => (
+                              <option key={g.id} value={g.id}>{g.nom}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="filter-group">
+                          <label>Date absence</label>
+                          <input 
+                            type="date" 
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Stagiaires Table */}
+                    <section className="table-section">
+                      <div className="table-section-header">
+                        <span className="table-section-title">Liste des Stagiaires</span>
+                        <span className="table-section-count">
+                          {selectedStagiaires.length} sélectionné(s) sur {filteredStagiaires.length}
+                        </span>
+                      </div>
+                      <div className="table-container">
+                        {filteredStagiaires.length > 0 ? (
+                          <table>
+                            <thead>
+                              <tr>
+                                <th className="th-checkbox">
+                                  <input 
+                                    type="checkbox"
+                                    checked={selectedStagiaires.length === filteredStagiaires.length && filteredStagiaires.length > 0}
+                                    onChange={handleSelectAll}
+                                    disabled={isLoading}
+                                  />
+                                </th>
+                                <th className="th-cef">CEF</th>
+                                <th>Nom du stagiaire</th>
+                                <th>Email</th>
+                                <th className="th-note">Note discipline</th>
+                                <th className="th-duration">Durée absence</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredStagiaires.map(s => (
+                                <tr key={s.id}>
+                                  <td>
+                                    <input 
+                                      type="checkbox"
+                                      checked={selectedStagiaires.includes(s.id)}
+                                      onChange={() => handleSelectStagiaire(s.id)}
+                                      disabled={isLoading}
+                                    />
+                                  </td>
+                                  <td>{s.cef}</td>
+                                  <td>{s.nom}</td>
+                                  <td>{s.email}</td>
+                                  <td>{s.noteDiscipline}</td>
+                                  <td>
+                                    {selectedStagiaires.includes(s.id) ? (
+                                      <div className="duration-selector">
+                                        <select
+                                          value={stagiairesDurations[s.id] || absenceDuree}
+                                          onChange={(e) => handleStagiaireDurationChange(s.id, e.target.value)}
+                                          className="duration-select"
+                                          disabled={isLoading}
+                                        >
+                                          <option value="1">2h30 (1 séance)</option>
+                                          <option value="2">5h00 (2 séances)</option>
+                                          <option value="custom">Durée personnalisée</option>
+                                        </select>
+                                        {(stagiairesDurations[s.id] === 'custom') && (
+                                          <input
+                                            type="number"
+                                            min="0.5"
+                                            max="8"
+                                            step="0.5"
+                                            placeholder="Heures"
+                                            className="custom-duration-input"
+                                            disabled={isLoading}
+                                            onChange={(e) => {
+                                              if (!handleCustomDurationChange(s.id, e.target.value)) {
+                                                e.target.setCustomValidity('Durée invalide (0.5 à 8 heures)')
+                                              } else {
+                                                e.target.setCustomValidity('')
+                                              }
+                                            }}
+                                          />
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="duration-placeholder">-</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div className="empty-state">
+                            {isLoading ? (
+                              <LoadingSpinner message="Chargement des stagiaires..." />
+                            ) : (
+                              'Sélectionnez un secteur, une filière et un groupe pour afficher les stagiaires.'
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </section>
+
+                    {/* Action Section */}
+                    <section className="action-section">
+                      <div className="action-section-title">Marquer l'absence</div>
+                      <div className="action-row">
+                        <div className="action-group">
+                          <label>Durée</label>
+                          <select 
+                            value={absenceDuree} 
+                            onChange={(e) => setAbsenceDuree(e.target.value)}
+                            disabled={isLoading}
+                          >
+                            <option value="1">1 séance (2h30)</option>
+                            <option value="2">2 séances (5h00)</option>
+                          </select>
+                        </div>
+                        <div className="action-group">
+                          <label>État</label>
+                          <select 
+                            value={absenceEtat} 
+                            onChange={(e) => setAbsenceEtat(e.target.value)}
+                            disabled={isLoading}
+                          >
+                            <option value="J">Justifiée</option>
+                            <option value="NJ">Non justifiée</option>
+                          </select>
+                        </div>
+                        <button 
+                          className={`btn-primary ${isLoading ? 'btn-loading' : ''}`}
+                          onClick={handleMarquerAbsence}
+                          disabled={selectedStagiaires.length === 0 || isLoading}
+                        >
+                          {isLoading ? '' : 'Marquer absence pour les stagiaires sélectionnés'}
+                        </button>
+                      </div>
+                    </section>
+                  </>
+                </ProtectedRoute>
+              ) : currentView === 'consulter' ? (
+                <ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_ALL_GROUPS, PERMISSIONS.VIEW_ASSIGNED_GROUPS]}>
+                  <EnhancedAbsenceConsultation absences={absences} />
+                </ProtectedRoute>
+              ) : currentView === 'gestion-stagiaires' ? (
+                <ProtectedRoute requiredPermission={PERMISSIONS.STUDENT_MANAGEMENT}>
+                  <StudentManager />
+                </ProtectedRoute>
+              ) : currentView === 'import-excel' ? (
+                <ProtectedRoute requiredPermission={PERMISSIONS.EXCEL_IMPORT}>
+                  <ExcelImporter />
+                </ProtectedRoute>
+              ) : currentView === 'rollback' ? (
+                <ProtectedRoute requiredPermission={PERMISSIONS.ROLLBACK_ABSENCES}>
+                  <RollbackManager 
+                    absences={absences}
+                    onRollback={handleRollback}
+                    currentUser={username}
+                  />
+                </ProtectedRoute>
+              ) : currentView === 'analytics' ? (
+                <ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_ALL_GROUPS, PERMISSIONS.VIEW_ASSIGNED_GROUPS]}>
+                  <AbsenceAnalytics absences={absences} />
+                </ProtectedRoute>
+              ) : (
+                <div className="feature-placeholder">
+                  <h3>Fonctionnalité en développement</h3>
+                  <p>Cette fonctionnalité sera disponible prochainement.</p>
+                  <p>Vue actuelle: {currentView}</p>
+                </div>
+              )}
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
 
