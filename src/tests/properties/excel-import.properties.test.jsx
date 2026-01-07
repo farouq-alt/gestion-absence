@@ -34,7 +34,7 @@ const MOCK_EXISTING_STUDENTS = [
 
 // Generators for property-based testing
 const validCefGenerator = fc.string({ minLength: 6, maxLength: 12 }).filter(s => /^[a-zA-Z0-9]+$/.test(s))
-const validNameGenerator = fc.string({ minLength: 2, maxLength: 50 }).filter(s => /^[a-zA-ZÀ-ÿ\s]+$/.test(s))
+const validNameGenerator = fc.string({ minLength: 2, maxLength: 50 }).filter(s => /^[a-zA-ZÀ-ÿ\s]+$/.test(s) && s.trim().length >= 2)
 const validEmailGenerator = fc.emailAddress()
 const validGroupGenerator = fc.constantFrom(...MOCK_GROUPS.map(g => g.nom))
 
@@ -277,10 +277,10 @@ describe('Excel Import Property-Based Tests', () => {
           
           // Verify each student is properly validated
           result.validStudents.forEach((student, index) => {
-            expect(student.cef).toBe(uniqueStudents[index].cef)
-            expect(student.nom).toBe(uniqueStudents[index].nom)
-            expect(student.email).toBe(uniqueStudents[index].email)
-            expect(student.groupe).toBe(uniqueStudents[index].groupe)
+            expect(student.cef).toBe(uniqueStudents[index].cef.trim())
+            expect(student.nom).toBe(uniqueStudents[index].nom.trim())
+            expect(student.email).toBe(uniqueStudents[index].email.trim())
+            expect(student.groupe).toBe(uniqueStudents[index].groupe.trim())
           })
           
           return true

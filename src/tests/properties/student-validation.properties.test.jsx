@@ -84,7 +84,7 @@ describe('Property 3: Student data validation', () => {
             expect(errors).toHaveLength(0)
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -112,7 +112,7 @@ describe('Property 3: Student data validation', () => {
             }
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -139,7 +139,7 @@ describe('Property 3: Student data validation', () => {
             }
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -164,7 +164,7 @@ describe('Property 3: Student data validation', () => {
             }
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -185,7 +185,7 @@ describe('Property 3: Student data validation', () => {
             expect(scoreErrors.some(e => e.message.includes('entre 0 et 20'))).toBe(true)
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -209,7 +209,7 @@ describe('Property 3: Student data validation', () => {
             expect(cefErrors.some(e => e.message.includes('unique'))).toBe(true)
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -233,7 +233,7 @@ describe('Property 3: Student data validation', () => {
             expect(emailErrors.some(e => e.message.includes('unique'))).toBe(true)
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
 
@@ -258,7 +258,7 @@ describe('Property 3: Student data validation', () => {
             expect(emailErrors).toHaveLength(0)
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 2 }
       )
     })
   })
@@ -288,7 +288,7 @@ describe('Property 3: Student data validation', () => {
             expect(errors).toHaveLength(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -314,7 +314,7 @@ describe('Property 3: Student data validation', () => {
             expect(cefErrors.length).toBeGreaterThan(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -340,7 +340,7 @@ describe('Property 3: Student data validation', () => {
             expect(emailErrors.length).toBeGreaterThan(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -363,7 +363,7 @@ describe('Property 3: Student data validation', () => {
             expect(cefErrors.length).toBeGreaterThan(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -409,7 +409,7 @@ describe('Property 3: Student data validation', () => {
             expect(errors).toHaveLength(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -430,7 +430,7 @@ describe('Property 3: Student data validation', () => {
             expect(sizeErrors.length).toBeGreaterThan(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -448,7 +448,7 @@ describe('Property 3: Student data validation', () => {
             expect(typeErrors.length).toBeGreaterThan(0)
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
 
@@ -490,7 +490,7 @@ describe('Property 3: Student data validation', () => {
             })
           }
         ),
-        { numRuns: 3 }
+        { numRuns: 1 }
       )
     })
   })

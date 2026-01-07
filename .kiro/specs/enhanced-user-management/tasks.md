@@ -43,12 +43,13 @@ This implementation plan breaks down the enhanced user management features into 
   - Implement group management (create, edit, delete groups)
   - _Requirements: 2.1, 2.2, 2.6, 2.7_
 
-- [ ] 3.1 Write property test for student data validation
+- [x] 3.1 Write property test for student data validation
 
   - **Property 3: Student data validation**
   - **Validates: Requirements 2.2**
 
-- [ ]* 3.2 Write property test for group management with referential integrity
+- [ ] 3.2 Write property test for group management with referential integrity
+
   - **Property 5: Group management with referential integrity**
   - **Validates: Requirements 2.7, 9.3**
 
@@ -66,11 +67,13 @@ This implementation plan breaks down the enhanced user management features into 
   - Add progress indicators for import/export operations
   - _Requirements: 2.3, 2.4, 2.5, 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [x]* 4.1 Write property test for Excel import validation and processing
+- [x] 4.1 Write property test for Excel import validation and processing
+
   - **Property 4: Excel import validation and processing**
   - **Validates: Requirements 2.3, 2.4, 2.5, 7.1, 7.2, 7.3, 7.4, 7.5**
 
-- [-]* 4.2 Write unit tests for Excel import/export
+- [x]* 4.2 Write unit tests for Excel import/export
+
   - Test file format validation
   - Test error reporting for invalid data
   - Test successful import workflow
