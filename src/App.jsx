@@ -382,6 +382,22 @@ function App() {
     )
   }
 
+  // Admin Dashboard has its own full layout
+  if (userRole === 'Administrateur' && currentView === 'dashboard') {
+    return (
+      <ErrorBoundary>
+        {isLoading && (
+          <LoadingSpinner 
+            overlay={true} 
+            message={loadingMessage} 
+            size="large"
+          />
+        )}
+        <AdminDashboard currentView={currentView} setCurrentView={setCurrentView} />
+      </ErrorBoundary>
+    )
+  }
+
   return (
     <ErrorBoundary>
       <div className="app-container">
@@ -546,11 +562,7 @@ function App() {
           <main className="main-content">
             <ErrorBoundary>
               {currentView === 'dashboard' ? (
-                userRole === 'Administrateur' ? (
-                  <AdminDashboard currentView={currentView} setCurrentView={setCurrentView} />
-                ) : (
-                  <TeacherDashboard currentView={currentView} setCurrentView={setCurrentView} />
-                )
+                <TeacherDashboard currentView={currentView} setCurrentView={setCurrentView} />
               ) : currentView === 'marquer' ? (
                 <ProtectedRoute requiredPermission={PERMISSIONS.MARK_ABSENCES}>
                   <>
