@@ -3,11 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useAppState } from '../hooks/useAppState'
 import { PERMISSIONS } from '../utils/permissions'
 import ProtectedRoute from './ProtectedRoute'
-import { MdCheckCircle, MdDashboard, MdUndo, MdLogout, MdGroup, MdWarning } from 'react-icons/md'
+import { MdCheckCircle, MdDashboard, MdUndo, MdGroup, MdWarning } from 'react-icons/md'
 import '../styles/TeacherDashboard.css'
 
-function TeacherDashboard({ currentView, setCurrentView }) {
-  const { username, logout, checkPermission } = useAuth()
+function TeacherDashboard({ setCurrentView }) {
+  const { checkPermission } = useAuth()
   const { absences, groupes } = useAppState()
 
   // Calculate key metrics
@@ -28,7 +28,7 @@ function TeacherDashboard({ currentView, setCurrentView }) {
     }
   }, [absences, groupes])
 
-  const teacherMenuItems = [
+  const menuItems = [
     {
       id: 'marquer',
       label: 'Marquer Absence',
@@ -50,67 +50,12 @@ function TeacherDashboard({ currentView, setCurrentView }) {
       permission: PERMISSIONS.ROLLBACK_ABSENCES,
       description: 'Annuler des absences récemment marquées'
     }
-  ]
-
-  const availableMenuItems = teacherMenuItems.filter(item => 
-    checkPermission(item.permission)
-  )
-
-  const handleLogout = () => {
-    logout()
-  }
+  ].filter(item => checkPermission(item.permission))
 
   return (
     <div className="teacher-dashboard">
-      {/* Top Bar */}
-      <header className="teacher-topbar">
-        <div className="topbar-title">Tableau de Bord Formateur</div>
-        <div className="topbar-user">
-          <span className="user-name">{username}</span>
-          <button className="topbar-logout" onClick={handleLogout}>
-            Déconnexion
-          </button>
-        </div>
-      </header>
-
-      <div className="teacher-layout">
-        {/* Left Sidebar */}
-        <aside className="teacher-sidebar">
-          <nav className="teacher-nav">
-            {availableMenuItems.map(item => {
-              const IconComponent = item.icon
-              return (
-                <ProtectedRoute 
-                  key={item.id}
-                  requiredPermission={item.permission}
-                  showError={false}
-                >
-                  <button
-                    className={`teacher-nav-item ${currentView === item.id ? 'active' : ''}`}
-                    onClick={() => setCurrentView(item.id)}
-                  >
-                    <span className="nav-icon">
-                      <IconComponent size={20} />
-                    </span>
-                    <span className="nav-label">{item.label}</span>
-                  </button>
-                </ProtectedRoute>
-              )
-            })}
-            <button
-              className="teacher-nav-item nav-logout"
-              onClick={handleLogout}
-            >
-              <span className="nav-icon">
-                <MdLogout size={20} />
-              </span>
-              <span className="nav-label">Déconnexion</span>
-            </button>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="teacher-main">
+      {/* Main Content */}
+      <div className="teacher-content">
           {/* Key Numbers Row */}
           <section className="teacher-metrics-row">
             <div 
@@ -192,7 +137,7 @@ function TeacherDashboard({ currentView, setCurrentView }) {
           <section className="teacher-menu-cards">
             <h3>Fonctionnalités</h3>
             <div className="menu-cards-grid">
-              {availableMenuItems.map(item => {
+              {menuItems.map(item => {
                 const IconComponent = item.icon
                 return (
                   <ProtectedRoute 
@@ -201,7 +146,7 @@ function TeacherDashboard({ currentView, setCurrentView }) {
                     showError={false}
                   >
                     <div 
-                      className={`menu-card ${currentView === item.id ? 'active' : ''}`}
+                      className="menu-card"
                       onClick={() => setCurrentView(item.id)}
                     >
                       <div className="menu-card-icon">
@@ -217,7 +162,6 @@ function TeacherDashboard({ currentView, setCurrentView }) {
               })}
             </div>
           </section>
-        </main>
       </div>
     </div>
   )

@@ -242,6 +242,14 @@ function App() {
       showWarning('Veuillez sélectionner au moins un stagiaire et une date')
       return
     }
+
+    // Teachers can only mark absences for today
+    const today = new Date().toISOString().split('T')[0]
+    if (userRole === 'Formateur' && selectedDate !== today) {
+      showError('Les formateurs ne peuvent marquer que les absences du jour')
+      setSelectedDate(today) // Reset to today
+      return
+    }
     
     try {
       setLoading(true, 'Enregistrement des absences...')
@@ -625,8 +633,14 @@ function App() {
                             type="date" 
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            disabled={isLoading}
+                            disabled={isLoading || userRole === 'Formateur'}
+                            min={userRole === 'Formateur' ? new Date().toISOString().split('T')[0] : undefined}
+                            max={userRole === 'Formateur' ? new Date().toISOString().split('T')[0] : undefined}
+                            title={userRole === 'Formateur' ? 'Les formateurs ne peuvent marquer que les absences du jour' : ''}
                           />
+                          {userRole === 'Formateur' && (
+                            <small className="filter-hint">Seule la date d'aujourd'hui est autorisée</small>
+                          )}
                         </div>
                       </div>
                     </section>
