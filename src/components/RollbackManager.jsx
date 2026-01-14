@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { MdWarning } from 'react-icons/md'
 
 // Mock data - in a real app this would come from props or context
 const STAGIAIRES = [
@@ -231,7 +232,7 @@ function RollbackManager({ absences = [], onRollback, currentUser = 'teacher1' }
             
             <div className="modal-content">
               <div className="rollback-confirmation">
-                <div className="confirmation-icon">⚠️</div>
+                <div className="confirmation-icon"><MdWarning size={40} /></div>
                 <p>
                   Êtes-vous sûr de vouloir annuler cette absence ?
                 </p>

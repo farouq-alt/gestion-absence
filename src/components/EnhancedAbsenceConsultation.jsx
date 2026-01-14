@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { PERMISSIONS, hasPermission } from '../utils/permissions'
+import { MdFileDownload, MdPictureAsPdf, MdPrint } from 'react-icons/md'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -396,21 +397,24 @@ function EnhancedAbsenceConsultation({ absences = [] }) {
                   onClick={exportToExcel}
                   title="Exporter vers Excel"
                 >
-                  📊 Excel
+                  <MdFileDownload size={18} />
+                  <span>Excel</span>
                 </button>
                 <button 
                   className="btn-export btn-pdf"
                   onClick={exportToPDF}
                   title="Exporter vers PDF"
                 >
-                  📄 PDF
+                  <MdPictureAsPdf size={18} />
+                  <span>PDF</span>
                 </button>
                 <button 
                   className="btn-export btn-print"
                   onClick={handlePrint}
                   title="Imprimer"
                 >
-                  🖨️ Imprimer
+                  <MdPrint size={18} />
+                  <span>Imprimer</span>
                 </button>
               </div>
             )}

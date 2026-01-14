@@ -14,8 +14,9 @@ import ExcelImporter from './components/ExcelImporter'
 import RollbackManager from './components/RollbackManager'
 import AbsenceAnalytics from './components/AbsenceAnalytics'
 import EnhancedAbsenceConsultation from './components/EnhancedAbsenceConsultation'
+import { MdDashboard, MdCheckCircle, MdPeople, MdFileDownload, MdUndo, MdBarChart, MdAssignment, MdLogout } from 'react-icons/md'
 import { PERMISSIONS } from './utils/permissions'
-import './App.css'
+import './styles/App.css'
 
 function App() {
   const { isAuthenticated, userRole, username, logout } = useAuth()
@@ -430,7 +431,8 @@ function App() {
               onClick={() => setCurrentView('dashboard')}
               disabled={isLoading}
             >
-              Tableau de bord
+              <span className="nav-icon"><MdDashboard size={20} /></span>
+              <span className="nav-label">Tableau de bord</span>
             </button>
             
             <ProtectedRoute 
@@ -443,7 +445,8 @@ function App() {
                 onClick={() => setCurrentView('marquer')}
                 disabled={isLoading}
               >
-                Marquer Absence
+                <span className="nav-icon"><MdCheckCircle size={20} /></span>
+                <span className="nav-label">Marquer Absence</span>
               </button>
             </ProtectedRoute>
             
@@ -457,7 +460,8 @@ function App() {
                 onClick={() => setCurrentView('consulter')}
                 disabled={isLoading}
               >
-                Consulter Absences
+                <span className="nav-icon"><MdAssignment size={20} /></span>
+                <span className="nav-label">Consulter Absences</span>
               </button>
             </ProtectedRoute>
 
@@ -471,7 +475,8 @@ function App() {
                 onClick={() => setCurrentView('gestion-stagiaires')}
                 disabled={isLoading}
               >
-                Gestion Stagiaires
+                <span className="nav-icon"><MdPeople size={20} /></span>
+                <span className="nav-label">Gestion Stagiaires</span>
               </button>
             </ProtectedRoute>
 
@@ -485,7 +490,8 @@ function App() {
                 onClick={() => setCurrentView('import-excel')}
                 disabled={isLoading}
               >
-                Import Excel
+                <span className="nav-icon"><MdFileDownload size={20} /></span>
+                <span className="nav-label">Import Excel</span>
               </button>
             </ProtectedRoute>
 
@@ -499,7 +505,8 @@ function App() {
                 onClick={() => setCurrentView('rollback')}
                 disabled={isLoading}
               >
-                Annuler Absences
+                <span className="nav-icon"><MdUndo size={20} /></span>
+                <span className="nav-label">Annuler Absences</span>
               </button>
             </ProtectedRoute>
 
@@ -513,7 +520,8 @@ function App() {
                 onClick={() => setCurrentView('analytics')}
                 disabled={isLoading}
               >
-                Analyse Absences
+                <span className="nav-icon"><MdBarChart size={20} /></span>
+                <span className="nav-label">Analyse Absences</span>
               </button>
             </ProtectedRoute>
 
@@ -527,7 +535,8 @@ function App() {
                 onClick={() => setCurrentView('rapports')}
                 disabled={isLoading}
               >
-                Rapports
+                <span className="nav-icon"><MdAssignment size={20} /></span>
+                <span className="nav-label">Rapports</span>
               </button>
             </ProtectedRoute>
 
@@ -536,7 +545,8 @@ function App() {
               onClick={handleLogout}
               disabled={isLoading}
             >
-              Déconnexion
+              <span className="nav-icon"><MdLogout size={20} /></span>
+              <span className="nav-label">Déconnexion</span>
             </button>
           </nav>
         </aside>

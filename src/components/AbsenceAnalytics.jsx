@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { MdBarChart, MdEmojiEvents } from 'react-icons/md'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -430,11 +431,11 @@ function AbsenceAnalytics({ absences = generateSampleAbsences() }) {
               <div className="chart-empty-state">
                 {!chartData ? (
                   <div>
-                    <div className="empty-state-icon">📊</div>
+                    <div className="empty-state-icon"><MdBarChart size={48} /></div>
                     <h3>Aucune donnée disponible</h3>
                     <p>Ce stagiaire n'a aucune absence dans la période sélectionnée.</p>
                     <div className="perfect-attendance">
-                      <span className="perfect-attendance-icon">🏆</span>
+                      <span className="perfect-attendance-icon"><MdEmojiEvents size={32} /></span>
                       <span className="perfect-attendance-text">Assiduité parfaite!</span>
                     </div>
                   </div>

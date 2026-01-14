@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAppState } from '../hooks/useAppState'
-import './AdminDashboard.css'
+import { MdDashboard, MdLogout, MdCheckCircle, MdPeople, MdFileDownload } from 'react-icons/md'
+import '../styles/AdminDashboard.css'
 
 function AdminDashboard({ currentView, setCurrentView }) {
   const { username, logout } = useAuth()
@@ -99,19 +100,22 @@ function AdminDashboard({ currentView, setCurrentView }) {
               className={`admin-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
               onClick={() => setCurrentView('dashboard')}
             >
-              Tableau de bord
+              <span className="nav-icon"><MdDashboard size={20} /></span>
+              <span className="nav-label">Tableau de bord</span>
             </button>
             <button
               className={`admin-nav-item ${currentView === 'marquer' ? 'active' : ''}`}
               onClick={() => setCurrentView('marquer')}
             >
-              Marquer absence
+              <span className="nav-icon"><MdCheckCircle size={20} /></span>
+              <span className="nav-label">Marquer absence</span>
             </button>
             <button
               className={`admin-nav-item ${currentView === 'consulter' ? 'active' : ''}`}
               onClick={() => setCurrentView('consulter')}
             >
-              Consulter absences
+              <span className="nav-icon"><MdDashboard size={20} /></span>
+              <span className="nav-label">Consulter absences</span>
               {metrics.absencesToday > 0 && (
                 <span className="nav-badge">{metrics.absencesToday}</span>
               )}
@@ -120,25 +124,29 @@ function AdminDashboard({ currentView, setCurrentView }) {
               className={`admin-nav-item ${currentView === 'gestion-stagiaires' ? 'active' : ''}`}
               onClick={() => setCurrentView('gestion-stagiaires')}
             >
-              Gestion stagiaires
+              <span className="nav-icon"><MdPeople size={20} /></span>
+              <span className="nav-label">Gestion stagiaires</span>
             </button>
             <button
               className={`admin-nav-item ${currentView === 'import-excel' ? 'active' : ''}`}
               onClick={() => setCurrentView('import-excel')}
             >
-              Import Excel
+              <span className="nav-icon"><MdFileDownload size={20} /></span>
+              <span className="nav-label">Import Excel</span>
             </button>
             <button
               className={`admin-nav-item ${currentView === 'rapports' ? 'active' : ''}`}
               onClick={() => setCurrentView('rapports')}
             >
-              Rapports
+              <span className="nav-icon"><MdDashboard size={20} /></span>
+              <span className="nav-label">Rapports</span>
             </button>
             <button
               className="admin-nav-item nav-logout"
               onClick={handleLogout}
             >
-              Déconnexion
+              <span className="nav-icon"><MdLogout size={20} /></span>
+              <span className="nav-label">Déconnexion</span>
             </button>
           </nav>
         </aside>

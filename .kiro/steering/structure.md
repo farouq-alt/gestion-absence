@@ -5,9 +5,16 @@ ofppt-absence/
 ├── src/
 │   ├── main.jsx          # App entry point, renders root component
 │   ├── App.jsx           # Main application component (all logic currently here)
-│   ├── App.css           # Application styles
-│   ├── index.css         # Global/reset styles
-│   └── assets/           # Static assets (images, SVGs)
+│   ├── styles/           # Centralized styles folder
+│   │   ├── App.css       # Main application styles
+│   │   ├── index.css     # Global/reset styles
+│   │   └── AdminDashboard.css # Admin dashboard styles
+│   ├── assets/           # Static assets (images, SVGs)
+│   ├── components/       # React components
+│   ├── contexts/         # React context providers
+│   ├── hooks/            # Custom React hooks
+│   ├── utils/            # Utility functions
+│   └── tests/            # Test files
 ├── public/               # Public static files served as-is
 ├── index.html            # HTML entry point
 ├── vite.config.js        # Vite build configuration
@@ -30,6 +37,8 @@ ofppt-absence/
 
 ## Styling
 
-- Component-specific CSS in `App.css`
-- Global styles in `index.css`
+- Centralized CSS in `src/styles/` folder
+- Component-specific CSS in `src/styles/AdminDashboard.css`
+- Global styles in `src/styles/index.css`
+- Main application styles in `src/styles/App.css`
 - No CSS framework or preprocessor

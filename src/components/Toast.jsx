@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react'
+import { MdCheckCircle, MdError, MdWarning, MdInfo } from 'react-icons/md'
 
 const ToastContext = createContext()
 
@@ -84,10 +85,10 @@ function Toast({ toast, onRemove }) {
 
   const getIcon = () => {
     switch (toast.type) {
-      case 'success': return '✓'
-      case 'error': return '✕'
-      case 'warning': return '⚠'
-      default: return 'ℹ'
+      case 'success': return <MdCheckCircle size={20} />
+      case 'error': return <MdError size={20} />
+      case 'warning': return <MdWarning size={20} />
+      default: return <MdInfo size={20} />
     }
   }
 
