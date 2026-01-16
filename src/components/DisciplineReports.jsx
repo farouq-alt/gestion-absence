@@ -6,30 +6,37 @@ import {
   AUTORITE_LABELS, 
   calculateDisciplineStatus 
 } from '../utils/disciplineRules'
-import { MdWarning, MdCheckCircle, MdGavel, MdPerson, MdFilterList } from 'react-icons/md'
+import { MdWarning, MdCheckCircle, MdGavel, MdPerson, MdFilterList, MdPrint, MdPlayArrow } from 'react-icons/md'
+import jsPDF from 'jspdf'
 import '../styles/DisciplineReports.css'
 
 function DisciplineReports() {
-  const { disciplineReports, stagiaires, groupes, absences, updateDisciplineReport } = useAppState()
+  const { disciplineReports, stagiaires, groupes, filieres, secteurs, absences, updateDisciplineReport } = useAppState()
   const { username } = useAuth()
   
   const [statusFilter, setStatusFilter] = useState('')
   const [groupeFilter, setGroupeFilter] = useState('')
   const [selectedReport, setSelectedReport] = useState(null)
+  const [showApplyModal, setShowApplyModal] = useState(false)
+  const [applyingReport, setApplyingReport] = useState(null)
 
   // Get all stagiaires with their discipline status
   const stagiairesWithStatus = useMemo(() => {
     return stagiaires.map(stagiaire => {
       const status = calculateDisciplineStatus(stagiaire.id, absences)
       const groupe = groupes.find(g => g.id === stagiaire.groupeId)
+      const filiere = filieres.find(f => f.id === groupe?.filiereId)
+      const secteur = secteurs.find(s => s.id === filiere?.secteurId)
       return {
         ...stagiaire,
         groupe,
+        filiere,
+        secteur,
         disciplineStatus: status
       }
-    }).filter(s => s.disciplineStatus.points > 0) // Only show those with points
-      .sort((a, b) => b.disciplineStatus.points - a.disciplineStatus.points) // Sort by points desc
-  }, [stagiaires, absences, groupes])
+    }).filter(s => s.disciplineStatus.points > 0)
+      .sort((a, b) => b.disciplineStatus.points - a.disciplineStatus.points)
+  }, [stagiaires, absences, groupes, filieres, secteurs])
 
   // Filter reports
   const filteredReports = useMemo(() => {
@@ -67,6 +74,193 @@ function DisciplineReports() {
       updatedBy: username
     }, username)
     setSelectedReport(null)
+  }
+
+  // Apply sanction and generate PDF report
+  const handleApplySanction = (report) => {
+    const stagiaire = stagiairesWithStatus.find(s => s.id === report.stagiaireId)
+    
+    // Update report status to executed
+    updateDisciplineReport(report.id, {
+      status: 'executed',
+      executedAt: new Date().toISOString(),
+      executedBy: username
+    }, username)
+
+    // Generate professional PDF
+    generateSanctionPDF(report, stagiaire)
+    
+    setShowApplyModal(false)
+    setApplyingReport(null)
+  }
+
+  // Generate professional sanction PDF
+  const generateSanctionPDF = (report, stagiaire) => {
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const today = new Date().toLocaleDateString('fr-FR', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+
+    // Header
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('ROYAUME DU MAROC', pageWidth / 2, 20, { align: 'center' })
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Office de la Formation Professionnelle', pageWidth / 2, 26, { align: 'center' })
+    doc.text('et de la Promotion du Travail', pageWidth / 2, 31, { align: 'center' })
+    
+    // Logo placeholder (line)
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.5)
+    doc.line(20, 38, pageWidth - 20, 38)
+
+    // Title
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    const title = getSanctionTitle(report.sanctionCode)
+    doc.text(title, pageWidth / 2, 52, { align: 'center' })
+
+    // Reference number
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Réf: DISC-${report.id.toString().slice(-8).toUpperCase()}`, 20, 65)
+    doc.text(`Date: ${today}`, pageWidth - 20, 65, { align: 'right' })
+
+    // Stagiaire info box
+    doc.setDrawColor(100)
+    doc.setFillColor(245, 245, 245)
+    doc.roundedRect(20, 75, pageWidth - 40, 35, 3, 3, 'FD')
+    
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INFORMATIONS DU STAGIAIRE', 25, 83)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Nom et Prénom: ${report.stagiaireNom}`, 25, 92)
+    doc.text(`CEF: ${report.stagiaireCef}`, 120, 92)
+    doc.text(`Groupe: ${stagiaire?.groupe?.nom || 'N/A'}`, 25, 100)
+    doc.text(`Filière: ${stagiaire?.filiere?.nom || 'N/A'}`, 120, 100)
+
+    // Sanction details
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('MOTIF DE LA SANCTION', 20, 125)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    
+    const motifText = `Suite au cumul de ${report.points * 4} retards non justifiés (${report.points} points de discipline), ` +
+      `conformément au règlement intérieur de l'établissement et au barème des sanctions en vigueur, ` +
+      `le stagiaire susmentionné fait l'objet de la sanction suivante:`
+    
+    const splitMotif = doc.splitTextToSize(motifText, pageWidth - 40)
+    doc.text(splitMotif, 20, 135)
+
+    // Sanction box
+    doc.setDrawColor(200, 0, 0)
+    doc.setFillColor(255, 240, 240)
+    doc.roundedRect(20, 155, pageWidth - 40, 25, 3, 3, 'FD')
+    
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(180, 0, 0)
+    doc.text(report.sanctionLabel.toUpperCase(), pageWidth / 2, 170, { align: 'center' })
+    doc.setTextColor(0)
+
+    // Authority
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Autorité disciplinaire: ${report.autoriteLabel}`, 20, 195)
+
+    // Consequences section
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('CONSÉQUENCES', 20, 210)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    
+    const consequences = getConsequencesText(report.sanctionCode)
+    const splitConsequences = doc.splitTextToSize(consequences, pageWidth - 40)
+    doc.text(splitConsequences, 20, 220)
+
+    // Warning
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'italic')
+    const warning = 'En cas de récidive, des sanctions plus sévères seront appliquées conformément au règlement intérieur, ' +
+      'pouvant aller jusqu\'à l\'exclusion définitive de l\'établissement.'
+    const splitWarning = doc.splitTextToSize(warning, pageWidth - 40)
+    doc.text(splitWarning, 20, 245)
+
+    // Signatures
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Signature du Stagiaire:', 25, 270)
+    doc.text('Cachet et Signature de l\'Autorité:', pageWidth - 80, 270)
+    
+    // Signature lines
+    doc.line(25, 285, 80, 285)
+    doc.line(pageWidth - 80, 285, pageWidth - 25, 285)
+
+    // Footer
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'italic')
+    doc.text('Document généré automatiquement par le système de gestion des absences OFPPT', pageWidth / 2, 295, { align: 'center' })
+
+    // Save PDF
+    const fileName = `Sanction_${report.stagiaireCef}_${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(fileName)
+  }
+
+  const getSanctionTitle = (code) => {
+    if (code.startsWith('MG')) return 'MISE EN GARDE'
+    if (code.startsWith('AV')) return 'AVERTISSEMENT'
+    if (code === 'EX0') return 'DÉCISION D\'EXCLUSION'
+    if (code.startsWith('EX')) return 'DÉCISION D\'EXCLUSION TEMPORAIRE'
+    if (code === 'CDD') return 'CONVOCATION AU CONSEIL DE DISCIPLINE'
+    if (code === 'EXD') return 'DÉCISION D\'EXCLUSION DÉFINITIVE'
+    return 'SANCTION DISCIPLINAIRE'
+  }
+
+  const getConsequencesText = (code) => {
+    switch (code) {
+      case 'MG1':
+      case 'MG2':
+        return 'Cette mise en garde sera inscrite dans le dossier disciplinaire du stagiaire. ' +
+          'Le stagiaire est invité à améliorer son assiduité sous peine de sanctions plus sévères.'
+      case 'AV1':
+      case 'AV2':
+        return 'Cet avertissement sera inscrit dans le dossier disciplinaire du stagiaire et communiqué aux parents/tuteurs. ' +
+          'Une copie sera conservée dans le dossier administratif.'
+      case 'EX0':
+        return 'Le stagiaire est exclu des cours pour la journée en cours. ' +
+          'Cette exclusion sera notifiée aux parents/tuteurs.'
+      case 'EX1':
+        return 'Le stagiaire est exclu des cours pour une durée de 1 jour. ' +
+          'Cette exclusion prend effet immédiatement. Les parents/tuteurs seront informés.'
+      case 'EX2':
+        return 'Le stagiaire est exclu des cours pour une durée de 2 jours. ' +
+          'Cette exclusion prend effet immédiatement. Les parents/tuteurs seront informés.'
+      case 'EX3':
+        return 'Le stagiaire est exclu des cours pour une durée de 3 jours. ' +
+          'Cette exclusion prend effet immédiatement. Les parents/tuteurs seront informés.'
+      case 'CDD':
+        return 'Le stagiaire est convoqué devant le Conseil de Discipline de l\'établissement. ' +
+          'La date et l\'heure de la convocation seront communiquées ultérieurement. ' +
+          'La présence des parents/tuteurs est obligatoire.'
+      case 'EXD':
+        return 'Le stagiaire est définitivement exclu de l\'établissement. ' +
+          'Cette décision est immédiate et irrévocable. ' +
+          'Le stagiaire doit restituer tout matériel appartenant à l\'établissement.'
+      default:
+        return 'Cette sanction sera inscrite dans le dossier disciplinaire du stagiaire.'
+    }
   }
 
   const getStatusBadge = (status) => {
@@ -230,12 +424,38 @@ function DisciplineReports() {
                     <td>{report.autoriteLabel}</td>
                     <td>{report.points}</td>
                     <td>{getStatusBadge(report.status)}</td>
-                    <td>
+                    <td className="actions-cell">
+                      {report.status !== 'executed' && (
+                        <button 
+                          className="btn-apply"
+                          onClick={() => {
+                            setApplyingReport(report)
+                            setShowApplyModal(true)
+                          }}
+                          title="Appliquer la sanction et générer le rapport"
+                        >
+                          <MdPlayArrow size={16} />
+                          Appliquer
+                        </button>
+                      )}
+                      {report.status === 'executed' && (
+                        <button 
+                          className="btn-print"
+                          onClick={() => {
+                            const stagiaire = stagiairesWithStatus.find(s => s.id === report.stagiaireId)
+                            generateSanctionPDF(report, stagiaire)
+                          }}
+                          title="Réimprimer le rapport"
+                        >
+                          <MdPrint size={16} />
+                          Imprimer
+                        </button>
+                      )}
                       <button 
                         className="btn-action"
                         onClick={() => setSelectedReport(report)}
                       >
-                        Gérer
+                        Détails
                       </button>
                     </td>
                   </tr>
@@ -263,6 +483,9 @@ function DisciplineReports() {
               <p><strong>Date:</strong> {new Date(selectedReport.createdAt).toLocaleString('fr-FR')}</p>
               <p><strong>Créé par:</strong> {selectedReport.createdBy}</p>
               <p><strong>Statut actuel:</strong> {getStatusBadge(selectedReport.status)}</p>
+              {selectedReport.executedAt && (
+                <p><strong>Exécuté le:</strong> {new Date(selectedReport.executedAt).toLocaleString('fr-FR')} par {selectedReport.executedBy}</p>
+              )}
             </div>
             <div className="modal-actions">
               {selectedReport.status === 'pending' && (
@@ -273,12 +496,29 @@ function DisciplineReports() {
                   Marquer comme notifié
                 </button>
               )}
-              {selectedReport.status === 'acknowledged' && (
+              {selectedReport.status !== 'executed' && (
                 <button 
-                  className="btn-primary"
-                  onClick={() => handleUpdateStatus(selectedReport.id, 'executed')}
+                  className="btn-apply-modal"
+                  onClick={() => {
+                    setApplyingReport(selectedReport)
+                    setSelectedReport(null)
+                    setShowApplyModal(true)
+                  }}
                 >
-                  Marquer comme exécuté
+                  <MdPlayArrow size={18} />
+                  Appliquer la sanction
+                </button>
+              )}
+              {selectedReport.status === 'executed' && (
+                <button 
+                  className="btn-print-modal"
+                  onClick={() => {
+                    const stagiaire = stagiairesWithStatus.find(s => s.id === selectedReport.stagiaireId)
+                    generateSanctionPDF(selectedReport, stagiaire)
+                  }}
+                >
+                  <MdPrint size={18} />
+                  Réimprimer le rapport
                 </button>
               )}
               <button 
@@ -286,6 +526,60 @@ function DisciplineReports() {
                 onClick={() => setSelectedReport(null)}
               >
                 Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Apply Sanction Confirmation Modal */}
+      {showApplyModal && applyingReport && (
+        <div className="modal-overlay" onClick={() => setShowApplyModal(false)}>
+          <div className="modal-content apply-modal" onClick={e => e.stopPropagation()}>
+            <h3><MdGavel /> Confirmer l'application de la sanction</h3>
+            
+            <div className="apply-warning">
+              <MdWarning size={24} />
+              <p>Vous êtes sur le point d'appliquer la sanction suivante:</p>
+            </div>
+
+            <div className="sanction-preview">
+              <div className="preview-header">
+                <strong>{applyingReport.sanctionLabel}</strong>
+              </div>
+              <div className="preview-body">
+                <p><strong>Stagiaire:</strong> {applyingReport.stagiaireNom}</p>
+                <p><strong>CEF:</strong> {applyingReport.stagiaireCef}</p>
+                <p><strong>Points de discipline:</strong> {applyingReport.points}</p>
+                <p><strong>Autorité:</strong> {applyingReport.autoriteLabel}</p>
+              </div>
+            </div>
+
+            <div className="apply-info">
+              <p>Cette action va:</p>
+              <ul>
+                <li>Marquer la sanction comme exécutée</li>
+                <li>Générer un rapport PDF officiel à remettre au stagiaire</li>
+                <li>Enregistrer l'action dans l'historique</li>
+              </ul>
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="btn-apply-confirm"
+                onClick={() => handleApplySanction(applyingReport)}
+              >
+                <MdPlayArrow size={18} />
+                Confirmer et générer le rapport
+              </button>
+              <button 
+                className="btn-secondary"
+                onClick={() => {
+                  setShowApplyModal(false)
+                  setApplyingReport(null)
+                }}
+              >
+                Annuler
               </button>
             </div>
           </div>
