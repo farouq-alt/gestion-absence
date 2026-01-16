@@ -2986,3 +2986,167 @@ table input[type="checkbox"] {
   display: flex;
   flex-direction: column;
 }
+
+
+/* Plus Button for Actions */
+.btn-more {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.btn-more:hover {
+  background: #5a6268;
+}
+
+.already-justified {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.justified-info {
+  margin-left: 4px;
+  color: #28a745;
+  vertical-align: middle;
+}
+
+/* Justify Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content h3 {
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #2c3e50;
+}
+
+.justify-modal .absence-details {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.justify-modal .absence-details p {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+}
+
+.justify-form {
+  margin-bottom: 1rem;
+}
+
+.justify-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.justify-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.justify-form textarea:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.modal-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #856404;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.modal-actions .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1rem;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.modal-actions .btn-primary:hover:not(:disabled) {
+  background: #218838;
+}
+
+.modal-actions .btn-primary:disabled {
+  background: #94d3a2;
+  cursor: not-allowed;
+}
+
+.modal-actions .btn-secondary {
+  padding: 0.6rem 1rem;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.modal-actions .btn-secondary:hover {
+  background: #5a6268;
+}
+
+/* Filter hint for date restriction */
+.filter-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 4px;
+  font-style: italic;
+}

@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useAppState } from '../hooks/useAppState'
 import { PERMISSIONS, hasPermission } from '../utils/permissions'
-import { MdFileDownload, MdPictureAsPdf, MdPrint } from 'react-icons/md'
+import { calculateDisciplineStatus } from '../utils/disciplineRules'
+import { MdFileDownload, MdPictureAsPdf, MdPrint, MdMoreHoriz, MdCheckCircle } from 'react-icons/md'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -48,13 +50,19 @@ const STAGIAIRES = [
 ]
 
 function EnhancedAbsenceConsultation({ absences = [] }) {
-  const { userPermissions } = useAuth()
+  const { userPermissions, username } = useAuth()
+  const { justifyAbsence, stagiaires: appStagiaires } = useAppState()
   
   // Filter states
   const [selectedGroupe, setSelectedGroupe] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [justificationFilter, setJustificationFilter] = useState('') // '', 'J', 'NJ'
+  
+  // Modal state for justification
+  const [selectedAbsence, setSelectedAbsence] = useState(null)
+  const [justificationReason, setJustificationReason] = useState('')
+  const [showJustifyModal, setShowJustifyModal] = useState(false)
   
   // Check if user is administrator
   const isAdmin = hasPermission(userPermissions, PERMISSIONS.VIEW_ALL_GROUPS)
@@ -437,10 +445,15 @@ function EnhancedAbsenceConsultation({ absences = [] }) {
                   <th>État</th>
                   {isAdmin && <th>Enregistré par</th>}
                   {isAdmin && <th>Date d'enregistrement</th>}
+                  {isAdmin && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
-                {filteredAbsences.map(absence => (
+                {filteredAbsences.map(absence => {
+                  const stagiaire = appStagiaires.find(s => s.id === absence.stagiaireId) || absence.stagiaire
+                  const disciplineStatus = stagiaire ? calculateDisciplineStatus(stagiaire.id, absences) : null
+                  
+                  return (
                   <tr key={absence.id}>
                     <td>{absence.date}</td>
                     <td>{absence.stagiaire?.cef}</td>
@@ -452,6 +465,11 @@ function EnhancedAbsenceConsultation({ absences = [] }) {
                     <td>{formatDuration(absence.duree)}</td>
                     <td className={absence.etat === 'J' ? 'status-j' : 'status-nj'}>
                       {absence.etat === 'J' ? 'Justifiée' : 'Non justifiée'}
+                      {absence.justifiedAt && (
+                        <span className="justified-info" title={`Justifié par ${absence.justifiedBy} le ${new Date(absence.justifiedAt).toLocaleString('fr-FR')}`}>
+                          <MdCheckCircle size={14} />
+                        </span>
+                      )}
                     </td>
                     {isAdmin && <td>{absence.recordedBy || 'N/A'}</td>}
                     {isAdmin && (
@@ -462,8 +480,28 @@ function EnhancedAbsenceConsultation({ absences = [] }) {
                         }
                       </td>
                     )}
+                    {isAdmin && (
+                      <td>
+                        {absence.etat === 'NJ' ? (
+                          <button 
+                            className="btn-more"
+                            onClick={() => {
+                              setSelectedAbsence(absence)
+                              setJustificationReason('')
+                              setShowJustifyModal(true)
+                            }}
+                            title="Plus d'options"
+                          >
+                            <MdMoreHoriz size={20} />
+                            Plus
+                          </button>
+                        ) : (
+                          <span className="already-justified">✓</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           ) : (
@@ -475,6 +513,65 @@ function EnhancedAbsenceConsultation({ absences = [] }) {
           )}
         </div>
       </section>
+
+      {/* Justification Modal */}
+      {showJustifyModal && selectedAbsence && (
+        <div className="modal-overlay" onClick={() => setShowJustifyModal(false)}>
+          <div className="modal-content justify-modal" onClick={e => e.stopPropagation()}>
+            <h3>Justifier l'absence</h3>
+            <div className="absence-details">
+              <p><strong>Stagiaire:</strong> {selectedAbsence.stagiaire?.nom} ({selectedAbsence.stagiaire?.cef})</p>
+              <p><strong>Date:</strong> {selectedAbsence.date}</p>
+              <p><strong>Durée:</strong> {formatDuration(selectedAbsence.duree)}</p>
+              <p><strong>Groupe:</strong> {selectedAbsence.groupe?.nom}</p>
+            </div>
+            
+            <div className="justify-form">
+              <label htmlFor="justificationReason">Motif de justification:</label>
+              <textarea
+                id="justificationReason"
+                value={justificationReason}
+                onChange={(e) => setJustificationReason(e.target.value)}
+                placeholder="Ex: Certificat médical présenté, convocation officielle..."
+                rows={3}
+              />
+            </div>
+
+            <div className="modal-warning">
+              <strong>Note:</strong> Une fois justifiée, cette absence ne sera plus comptabilisée 
+              dans les points de discipline du stagiaire.
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  if (justificationReason.trim()) {
+                    justifyAbsence(selectedAbsence.id, justificationReason, username)
+                    setShowJustifyModal(false)
+                    setSelectedAbsence(null)
+                    setJustificationReason('')
+                  }
+                }}
+                disabled={!justificationReason.trim()}
+              >
+                <MdCheckCircle size={18} />
+                Confirmer la justification
+              </button>
+              <button 
+                className="btn-secondary"
+                onClick={() => {
+                  setShowJustifyModal(false)
+                  setSelectedAbsence(null)
+                  setJustificationReason('')
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

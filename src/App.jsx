@@ -14,8 +14,10 @@ import ExcelImporter from './components/ExcelImporter'
 import RollbackManager from './components/RollbackManager'
 import AbsenceAnalytics from './components/AbsenceAnalytics'
 import EnhancedAbsenceConsultation from './components/EnhancedAbsenceConsultation'
-import { MdDashboard, MdCheckCircle, MdPeople, MdFileDownload, MdUndo, MdBarChart, MdAssignment, MdLogout } from 'react-icons/md'
+import DisciplineReports from './components/DisciplineReports'
+import { MdDashboard, MdCheckCircle, MdPeople, MdFileDownload, MdUndo, MdBarChart, MdAssignment, MdLogout, MdGavel } from 'react-icons/md'
 import { PERMISSIONS } from './utils/permissions'
+import { checkForNewSanction, generateDisciplineReport } from './utils/disciplineRules'
 import './styles/App.css'
 
 function App() {
@@ -31,6 +33,7 @@ function App() {
     setLoading,
     addAbsences,
     removeAbsence,
+    addDisciplineReport,
     logAction
   } = useAppState()
   const { showSuccess, showError, showWarning } = useToast()
@@ -296,6 +299,34 @@ function App() {
       await new Promise(resolve => setTimeout(resolve, 500))
       
       addAbsences(newAbsences, username)
+      
+      // Check for discipline sanctions if absences are unjustified
+      if (absenceEtat === 'NJ') {
+        const absencesAfter = [...absences, ...newAbsences]
+        
+        // Check each stagiaire for new sanctions
+        selectedStagiaires.forEach(stagiaireId => {
+          const sanctionCheck = checkForNewSanction(stagiaireId, absences, absencesAfter)
+          
+          if (sanctionCheck.shouldApply) {
+            const stagiaire = stagiaires.find(s => s.id === stagiaireId)
+            if (stagiaire) {
+              const report = generateDisciplineReport(
+                stagiaire,
+                sanctionCheck.sanction,
+                newAbsences.filter(a => a.stagiaireId === stagiaireId),
+                username
+              )
+              addDisciplineReport(report, username)
+              
+              showWarning(
+                `⚠️ Sanction appliquée pour ${stagiaire.nom}: ${sanctionCheck.sanction.sanction} (${sanctionCheck.newPoints} points)`
+              )
+            }
+          }
+        })
+      }
+      
       setSelectedStagiaires([])
       setStagiairesDurations({}) // Clear individual durations
       
@@ -530,6 +561,21 @@ function App() {
               >
                 <span className="nav-icon"><MdBarChart size={20} /></span>
                 <span className="nav-label">Analyse Absences</span>
+              </button>
+            </ProtectedRoute>
+
+            <ProtectedRoute 
+              requiredPermission={PERMISSIONS.SYSTEM_REPORTS}
+              showError={false}
+              fallback={null}
+            >
+              <button 
+                className={`nav-item ${currentView === 'discipline' ? 'active' : ''}`}
+                onClick={() => setCurrentView('discipline')}
+                disabled={isLoading}
+              >
+                <span className="nav-icon"><MdGavel size={20} /></span>
+                <span className="nav-label">Rapports Discipline</span>
               </button>
             </ProtectedRoute>
 
@@ -800,6 +846,10 @@ function App() {
               ) : currentView === 'analytics' ? (
                 <ProtectedRoute requiredPermissions={[PERMISSIONS.VIEW_ALL_GROUPS, PERMISSIONS.VIEW_ASSIGNED_GROUPS]}>
                   <AbsenceAnalytics absences={absences} />
+                </ProtectedRoute>
+              ) : currentView === 'discipline' ? (
+                <ProtectedRoute requiredPermission={PERMISSIONS.SYSTEM_REPORTS}>
+                  <DisciplineReports />
                 </ProtectedRoute>
               ) : (
                 <div className="feature-placeholder">

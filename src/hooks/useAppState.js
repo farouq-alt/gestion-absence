@@ -84,7 +84,8 @@ const STORAGE_KEYS = {
   ABSENCES: 'ofppt_absences',
   STAGIAIRES: 'ofppt_stagiaires',
   GROUPES: 'ofppt_groupes',
-  AUDIT_LOG: 'ofppt_audit_log'
+  AUDIT_LOG: 'ofppt_audit_log',
+  DISCIPLINE_REPORTS: 'ofppt_discipline_reports'
 }
 
 export function useAppState() {
@@ -109,6 +110,11 @@ export function useAppState() {
     return saved ? JSON.parse(saved) : []
   })
 
+  const [disciplineReports, setDisciplineReports] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DISCIPLINE_REPORTS)
+    return saved ? JSON.parse(saved) : []
+  })
+
   // Loading states
   const [isLoading, setIsLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -129,6 +135,10 @@ export function useAppState() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.AUDIT_LOG, JSON.stringify(auditLog))
   }, [auditLog])
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DISCIPLINE_REPORTS, JSON.stringify(disciplineReports))
+  }, [disciplineReports])
 
   // Audit logging function
   const logAction = useCallback((action, details, userId) => {
@@ -218,6 +228,45 @@ export function useAppState() {
     })
   }, [logAction])
 
+  // Discipline report operations
+  const addDisciplineReport = useCallback((report, userId) => {
+    setDisciplineReports(prev => {
+      const updated = [...prev, report]
+      logAction('ADD_DISCIPLINE_REPORT', { report }, userId)
+      return updated
+    })
+  }, [logAction])
+
+  const updateDisciplineReport = useCallback((reportId, updates, userId) => {
+    setDisciplineReports(prev => {
+      const updated = prev.map(r => r.id === reportId ? { ...r, ...updates } : r)
+      logAction('UPDATE_DISCIPLINE_REPORT', { reportId, updates }, userId)
+      return updated
+    })
+  }, [logAction])
+
+  // Justify an absence (change status from NJ to J)
+  const justifyAbsence = useCallback((absenceId, justificationReason, userId) => {
+    setAbsences(prev => {
+      const absence = prev.find(a => a.id === absenceId)
+      if (!absence) return prev
+      
+      const updated = prev.map(a => 
+        a.id === absenceId 
+          ? { 
+              ...a, 
+              etat: 'J', 
+              justifiedAt: new Date().toISOString(),
+              justifiedBy: userId,
+              justificationReason 
+            } 
+          : a
+      )
+      logAction('JUSTIFY_ABSENCE', { absenceId, justificationReason }, userId)
+      return updated
+    })
+  }, [logAction])
+
   // Loading state management
   const setLoading = useCallback((loading, message = '') => {
     setIsLoading(loading)
@@ -234,6 +283,7 @@ export function useAppState() {
     stagiaires,
     groupes,
     auditLog,
+    disciplineReports,
     
     // Loading state
     isLoading,
@@ -243,12 +293,15 @@ export function useAppState() {
     // Operations
     addAbsences,
     removeAbsence,
+    justifyAbsence,
     addStagiaire,
     updateStagiaire,
     removeStagiaire,
     addGroupe,
     updateGroupe,
     removeGroupe,
+    addDisciplineReport,
+    updateDisciplineReport,
     logAction
   }
 }
